@@ -4,7 +4,7 @@
 #' Optimized GeoTIFFs (COGs) from the Soil Landscapes of the United States
 #' 100-meter (SOLUS100) soil property maps project
 #' repository: \doi{https://doi.org/10.15482/USDA.ADC/25033856}.
-#' 
+#'
 #' @details
 #'
 #' If the input object `x` is not specified (`NULL` or missing), a _SpatRaster_ object using the
@@ -49,7 +49,7 @@
 #'   result in missing values.
 #' @param filename character. Path to write output raster file. Default: `NULL` will keep result in
 #'   memory (or store in temporary file if memory threshold is exceeded)
-#' @param overwrite Overwrite `filename` if it exists? Default: `FALSE` 
+#' @param overwrite Overwrite `filename` if it exists? Default: `FALSE`
 #'
 #' @return A _SpatRaster_ object containing SOLUS grids for specified extent, depths, variables, and
 #'   product types.
@@ -58,30 +58,30 @@
 #'   J., & Thompson, J. A. (2024). Soil landscapes of the United States (SOLUS): developing
 #'   predictive soil property maps of the conterminous United States using hybrid training sets.
 #'   Soil Science Society of America Journal, 88, 2046–2065. \doi{https://doi.org/10.1002/saj2.20769}
-#' 
+#'
 #' @author Andrew G. Brown
-#' 
+#'
 #' @importFrom stats approxfun splinefun
-#' 
+#'
 #' @export
 #'
-#' @examplesIf curl::has_internet() && requireNamespace("httr", quietly = TRUE) && requireNamespace("sf", quietly = TRUE)  && packageVersion("terra") >= '1.8.93' && terra::proj_ok() && requireNamespace("aqp", quietly = TRUE)
-#' 
+#' @examplesIf curl::has_internet() && requireNamespace("httr", quietly = TRUE) && requireNamespace("sf", quietly = TRUE) && requireNamespace("terra", quietly = TRUE) && packageVersion("terra") >= '1.8.93' && terra::proj_ok() && requireNamespace("aqp", quietly = TRUE)
+#'
 #' \dontrun{
 #' b <- c(-119.747629, -119.67935, 36.912019, 36.944987)
-#' 
+#'
 #' bbox.sp <- sf::st_as_sf(wk::rct(
 #'   xmin = b[1], xmax = b[2], ymin = b[3], ymax = b[4],
 #'   crs = sf::st_crs(4326)
 #' ))
-#' 
+#'
 #' ssurgo.geom <- soilDB::SDA_spatialQuery(
 #'   bbox.sp,
 #'   what = 'mupolygon',
 #'   db = 'SSURGO',
 #'   geomIntersection = TRUE
 #' )
-#' 
+#'
 #' # grid output
 #' res <- fetchSOLUS(
 #'   ssurgo.geom,
@@ -89,9 +89,9 @@
 #'   variables = c("sandtotal", "silttotal", "claytotal", "cec7"),
 #'   output_type = "prediction"
 #' )
-#' 
+#'
 #' terra::plot(res)
-#' 
+#'
 #' # SoilProfileCollection output, using linear interpolation for 1cm slices
 #' # site-level variables (e.g. resdept) added to site data.frame of SPC
 #' res <- fetchSOLUS(
@@ -103,20 +103,20 @@
 #'   grid = FALSE,
 #'   samples = 10
 #' )
-#' 
+#'
 #' # plot, truncating each profile to the predicted restriction depth
 #' aqp::plotSPC(trunc(res, 0, res$resdept_p), color = "claytotal_p", divide.hz = FALSE)
 #' }
-fetchSOLUS <- function(x = NULL, 
-                       depth_slices = c(0, 5, 15, 30, 60, 100, 150), 
+fetchSOLUS <- function(x = NULL,
+                       depth_slices = c(0, 5, 15, 30, 60, 100, 150),
                        variables = c("anylithicdpt", "caco3", "cec7", "claytotal",
                                      "dbovendry",  "ec", "ecec", "fragvol", "gypsum",
-                                     "ph1to1h2o", "resdept", "sandco", "sandfine", 
-                                     "sandmed", "sandtotal", "sandvc", "sandvf", 
+                                     "ph1to1h2o", "resdept", "sandco", "sandfine",
+                                     "sandmed", "sandtotal", "sandvc", "sandvf",
                                      "sar", "silttotal", "soc"),
                        output_type = c("prediction",
                                        "relative prediction interval",
-                                       "95% low prediction interval", 
+                                       "95% low prediction interval",
                                        "95% high prediction interval"),
                        grid = TRUE,
                        samples = NULL,
@@ -125,70 +125,70 @@ fetchSOLUS <- function(x = NULL,
                        filename = NULL,
                        overwrite = FALSE
                        ) {
-  
+
   # Not all spline methods are relevant, but they can be allowed to work
   method <- match.arg(method[1], c("linear", "constant", "fmm", "periodic", "natural", "monoH.FC", "hyman", "step", "slice"))
-  
+
   # get index of SOLUS COGs
   ind <- try(.get_SOLUS_index())
-  
+
   if (inherits(ind, 'try-error')) {
     stop("Failed to fetch SOLUS grid index", call. = FALSE)
   }
-  
+
   # subset based on user specified properties, depths, and product type
-  isub <- ind[ind$property %in% variables & 
+  isub <- ind[ind$property %in% variables &
                 as.character(ind$depth_slice) %in% c("all", depth_slices) &
                 ind$filetype %in% output_type,]
-  
+
   isub$subproperty <- gsub("\\.tif$", "", isub$filename)
   isub$scalar <- as.numeric(isub$scalar)
-  
+
   if (!requireNamespace("terra")) {
     stop("package 'terra' is required", call. = FALSE)
   }
-  
+
   # create virtual raster from list of URLs
   r <- try(terra::rast(
     paste0("/vsicurl/", isub$url)
   ), silent = TRUE)
-  
+
   if (inherits(r, 'try-error')) {
     stop("Failed to initialize SpatRaster with remote SOLUS GeoTIFF: ", r[1], call. = FALSE)
   }
-  
+
   # manually apply scaling factors to source raster
   terra::scoff(r) <- cbind(1 / isub$scalar, 0)
-  
-  # do conversion of input spatial object 
+
+  # do conversion of input spatial object
   if (!missing(x) && !is.null(x)) {
-    
+
     # convert various input types to SpatVector
     if (inherits(x, 'SoilProfileCollection')) {
       x <- as(x, 'sf')
     }
-    
+
     if (inherits(x, c('RasterLayer', 'RasterStack'))) {
       x <- terra::rast(x)
     }
-    
+
     if (!inherits(x, c('SpatRaster', 'SpatVector'))) {
       x <- terra::vect(x)
     }
-    
+
     if (inherits(x, 'SpatVector')) {
       # project any input vector object to CRS of SOLUS
       x <- terra::project(x, terra::crs(r))
     }
-    
+
     xe <- terra::ext(terra::project(terra::as.polygons(x, ext = TRUE), r))
-    
+
     # handle requests out-of-bounds
-    if (!(terra::relate(terra::ext(r), xe, relation = "contains")[1] || 
+    if (!(terra::relate(terra::ext(r), xe, relation = "contains")[1] ||
         terra::relate(terra::ext(r), xe, relation = "overlaps")[1])) {
       stop("Extent of `x` is outside the boundaries of the source data extent.", call. = FALSE)
     }
-    
+
     if (!inherits(x, 'SpatRaster')){
       # crop to target extent (written to temp file if needed)
       r <- terra::crop(r, x, filename = filename)
@@ -197,7 +197,7 @@ fetchSOLUS <- function(x = NULL,
       r <- terra::project(r, x, filename = filename, align_only = FALSE, mask = TRUE, threads = TRUE)
     }
   }
-  
+
   if (isTRUE(grid)) {
     return(r)
   } else {
@@ -205,11 +205,11 @@ fetchSOLUS <- function(x = NULL,
       stop("package 'aqp' is required", call. = FALSE)
     }
   }
-  
+
   if (length(depth_slices) == 1 && method != "step") {
     stop("Cannot interpolate for SoilProfileCollection output with only one depth slice! Change `method` to \"step\" or add another `depth_slice`.", call. = FALSE)
   }
-    
+
   if (!missing(x) && !is.null(x) && inherits(x, 'SpatVector') && terra::is.points(x)) {
     dat <- terra::extract(r, x)
   } else {
@@ -222,12 +222,12 @@ fetchSOLUS <- function(x = NULL,
       dat <- terra::as.data.frame(r, xy = TRUE, na.rm = FALSE)
     }
   }
-  
+
   dat$ID <- seq_len(nrow(dat))
-  
+
   spc <- .convert_SOLUS_dataframe_to_SPC(dat, idname = "ID", method = method, max_depth = max_depth)
   aqp::initSpatial(spc, terra::crs(r)) <- ~ x + y
-  
+
   if (isFALSE(grid)) {
     return(spc)
   } else {
@@ -236,30 +236,30 @@ fetchSOLUS <- function(x = NULL,
 }
 
 .get_SOLUS_index <- function() {
-  
+
   # TODO: parse XML directly instead of HTML?
   if (!requireNamespace("rvest")) {
-    stop("package 'rvest' is required", call. = FALSE)  
+    stop("package 'rvest' is required", call. = FALSE)
   }
-  
+
   # read index as HTML table
   res <- rvest::html_table(rvest::read_html("https://storage.googleapis.com/solus100pub/index.html"), header = FALSE)[[1]]
-  
+
   # column names are in 4th row
   colnames(res) <- res[5, ]
-  
+
   # drop empty rows
   res <- res[-(c(1:5, nrow(res))), ]
-  
+
   # fix inconsistencies in depth column
   res$depth[is.na(res$depth) | res$depth == ""] <- "all_cm"
-  dlut <- c("all_cm" = "all", "0_cm" = "0", "5_cm" = "5", "15_cm" = "15", 
+  dlut <- c("all_cm" = "all", "0_cm" = "0", "5_cm" = "5", "15_cm" = "15",
             "30_cm" = "30", "60_cm" = "60", "100_cm" = "100", "150_cm" = "150")
-  
+
   # use depth slices
   res$depth_slice <- dlut[res$depth]
   res$depth_slice <- factor(res$depth_slice, levels = unique(dlut))
-  
+
   res
 }
 
@@ -267,80 +267,80 @@ fetchSOLUS <- function(x = NULL,
   # x: data.frame object with column names corresponding to .get_SOLUS_index() filenames
   # idname: character. column name used to identify profiles
   # method: character. depth interpolation method
-  
+
   # dummy global definitions
   .SD <- NULL
   ID <- NULL
   depth <- NULL
-  
+
   .extractTopDepthFromName <- function(x) {
     gsub("^.*_(\\d+|all)_cm_.*$", "\\1", x)
   }
-  
+
   .replaceTopDepthInName <- function(x) {
     gsub("^(.*)_(\\d+|all)_cm(_.*)$", "\\1\\3", x)
   }
-  
+
   tdep <- .extractTopDepthFromName(colnames(x))
   colnames(x) <- .replaceTopDepthInName(colnames(x))
-  
+
   h <- data.table::rbindlist(lapply(unique(tdep[!tdep %in% c("x", "y", "all", idname)]), function(xx) {
     data.frame(ID = x[[idname]], depth = xx, x[which(tdep == xx)])
   }))
-  
+
   s <- data.frame(ID = x[[idname]], x[tdep %in% c("x", "y", "all")])
-  
+
   h$depth <- as.numeric(h$depth)
-  
+
   h <- h[order(ID, depth),]
-  
+
   stepwise_dept <- c(0, 5, 15, 30, 60, 100, 150)
   stepwise_depb <- c(0, 15, 30, 60, 100, 150, 150)
   names(stepwise_depb) <- stepwise_dept
-  
+
   h$top <- h$depth
   h$bottom <- stepwise_depb[as.character(h$depth)]
-  
+
   ldx <- names(h) %in% c(idname, "depth", "x", "y", "top", "bottom")
   iv <- names(h)[ldx]
   vn <- names(h)[!ldx]
-  
+
   if (method %in% c("slice", "step")) {
-    
+
     if (method == "slice") {
-      
+
       h$bottom <- h$top + 1
-        
+
     } else {
-      message("NOTE: SOLUS predictions represent depth slices (method=\"slice\")\nConsider using method=\"constant\" or method=\"linear\".") 
-    
+      message("NOTE: SOLUS predictions represent depth slices (method=\"slice\")\nConsider using method=\"constant\" or method=\"linear\".")
+
       # apply fudge factors for depth slices as property input source
       h$bottom[h$bottom == 0] <- 5
       h$bottom[h$top == 150] <- max_depth
     }
-  
-    h <- as.data.frame(h)  
-  
+
+    h <- as.data.frame(h)
+
     aqp::depths(h) <- c(idname, "top", "bottom")
-    
+
     aqp::site(h) <- s
-    
+
     return(h)
   } else if (method %in% c("linear", "constant", "fmm", "periodic", "natural", "monoH.FC", "hyman")) {
-    
+
     mindep <- min(h$top, na.rm = TRUE)
     maxdep <- max(h$bottom, na.rm = TRUE)
-    
+
     if (maxdep == 150) {
       maxdep <- max_depth
     }
-    
+
     if (method %in% c("linear", "constant")) {
       FUN <- approxfun
     } else {
       FUN <- splinefun
     }
-    
+
     xx <- (mindep:(maxdep - 1))
     y <- unique(h$top)
     h2 <- h[, data.frame(top = mindep:(maxdep - 1),
@@ -349,18 +349,18 @@ fetchSOLUS <- function(x = NULL,
                            if (sum(!is.na(x)) <= 1)
                              return(rep(NA_real_, length(xx)))
                            FUN(y, x, method = method)(xx)
-                         })), 
-            .SDcols = vn, 
+                         })),
+            .SDcols = vn,
             by = list(ID = h[[idname]])]
-    
+
     h2 <- as.data.frame(h2)
-    
+
     aqp::depths(h2) <- c(idname, "top", "bottom")
-    
+
     aqp::site(h2) <- s
-    
+
     return(h2)
-    
+
   } else {
     stop("Invalid method argument (\"", method, "\")", call. = FALSE)
   }
