@@ -343,16 +343,16 @@ mu <- mukey.wcs(aoi = a, db = 'gssurgo')
 
 # check:
 print(mu)
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 147, 219, 1  (nrow, ncol, nlyr)
 #> resolution  : 30, 30  (x, y)
 #> extent      : -1365495, -1358925, 2869245, 2873655  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83 / Conus Albers (EPSG:5070) 
+#> coord. ref. : NAD83 / Conus Albers (EPSG:5070)
 #> source(s)   : memory
-#> varname     : file24ef5018773c 
-#> categories  : mukey 
-#> name        :   mukey 
-#> min value   :  144983 
+#> varname     : file24d045147ae
+#> categories  : mukey
+#> name        :   mukey
+#> min value   :  144983
 #> max value   : 1716001
 
 terra::plot(
@@ -471,44 +471,44 @@ a <- vect(a, crs = 'epsg:5070')
 
 # gSSURGO grid: 30m resolution
 (x <- mukey.wcs(a, db = 'gSSURGO'))
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 267, 200, 1  (nrow, ncol, nlyr)
 #> resolution  : 30, 30  (x, y)
 #> extent      : 1129005, 1135005, 1402995, 1411005  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83 / Conus Albers (EPSG:5070) 
+#> coord. ref. : NAD83 / Conus Albers (EPSG:5070)
 #> source(s)   : memory
-#> varname     : file24ef860af12 
-#> categories  : mukey 
-#> name        :  mukey 
-#> min value   : 545800 
+#> varname     : file24d0cb4aef7
+#> categories  : mukey
+#> name        :  mukey
+#> min value   : 545800
 #> max value   : 545887
 
 # gNATSGO grid: 30m resolution
 (y <- mukey.wcs(a, db = 'gNATSGO'))
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 267, 200, 1  (nrow, ncol, nlyr)
 #> resolution  : 30, 30  (x, y)
 #> extent      : 1129005, 1135005, 1402995, 1411005  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83 / Conus Albers (EPSG:5070) 
+#> coord. ref. : NAD83 / Conus Albers (EPSG:5070)
 #> source(s)   : memory
-#> varname     : file24ef2b0d9cfa 
-#> categories  : mukey 
-#> name        :   mukey 
-#> min value   :  545800 
+#> varname     : file24d05e8249cb
+#> categories  : mukey
+#> name        :   mukey
+#> min value   :  545800
 #> max value   : 3244759
 
 # RSS grid: 30m resolution
 (z <- mukey.wcs(a, db = 'RSS'))
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 267, 200, 1  (nrow, ncol, nlyr)
 #> resolution  : 30, 30  (x, y)
 #> extent      : 1129005, 1135005, 1402995, 1411005  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83 / Conus Albers (EPSG:5070) 
+#> coord. ref. : NAD83 / Conus Albers (EPSG:5070)
 #> source(s)   : memory
-#> varname     : file24ef497654e4 
-#> categories  : mukey 
-#> name        :   mukey 
-#> min value   : 3244721 
+#> varname     : file24d0333ed7fb
+#> categories  : mukey
+#> name        :   mukey
+#> min value   : 3244721
 #> max value   : 3244759
 
 # graphical comparison
@@ -555,16 +555,16 @@ and resolution) as SSURGO products.
 ``` r
 
 (statsgo <- mukey.wcs(a, db = 'statsgo'))
-#> class       : SpatRaster 
+#> class       : SpatRaster
 #> size        : 267, 200, 1  (nrow, ncol, nlyr)
 #> resolution  : 30, 30  (x, y)
 #> extent      : 1129005, 1135005, 1402995, 1411005  (xmin, xmax, ymin, ymax)
-#> coord. ref. : NAD83 / Conus Albers (EPSG:5070) 
+#> coord. ref. : NAD83 / Conus Albers (EPSG:5070)
 #> source(s)   : memory
-#> varname     : file24ef297b0f16 
-#> categories  : mukey 
-#> name        :  mukey 
-#> min value   : 659074 
+#> varname     : file24d06b22b18
+#> categories  : mukey
+#> name        :  mukey
+#> min value   : 659074
 #> max value   : 664845
 
 # graphical comparison
